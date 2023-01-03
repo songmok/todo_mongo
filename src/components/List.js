@@ -1,6 +1,5 @@
 import React from "react";
 import ListItem from "./ListItem";
-
 const List = React.memo(({ todoData, setTodoData, deleteClick, getStyle }) => {
   return (
     <div>
@@ -22,5 +21,4 @@ const List = React.memo(({ todoData, setTodoData, deleteClick, getStyle }) => {
     </div>
   );
 });
-
 export default List;
