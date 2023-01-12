@@ -1,9 +1,21 @@
-import React from 'react'
-
+import React, { Fragment } from "react";
+import styled from "styled-components";
+import AboutCss from "../styles/About.module.css";
 const About = () => {
+  const Box = styled.button`
+    border: 5px solid skyblue;
+    background-color: yellow;
+    font-size: 50px;
+    color: ${(props) => props.color || "red"};
+  `;
   return (
-    <div className='p-6 m-4 shoadow'>About</div>
-  )
-}
+    <>
+      <section className={AboutCss.no}>
+        About
+        <Box>될까요?</Box>
+      </section>
+    </>
+  );
+};
 
-export default About
+export default About;

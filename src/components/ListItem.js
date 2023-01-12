@@ -9,14 +9,14 @@ const ListItem = React.memo(({ item, todoData, setTodoData, deleteClick }) => {
   // 제목을 출력 하고 변경 하는 State
   // 편집창에는 타이틀이 먼저 작성되어야 있어야 하므로
   const [editedTitle, setEditedTitle] = useState(item.title);
+  // const deleteClick = (id) => {
+  //   // 클릭된 ID 와 다른 요소들만 걸러서 새로운 배열 생성
+  //   const nowTodo = todoData.filter((item) => item.id !== id);
+  //   // console.log("클릭", nowTodo);
+  //   setTodoData(nowTodo);
+  // };
+  // 편집창 내용 갱신 처리
 
-  //   const deleteClick = (id) => {
-  //     // 클릭된 ID 와 다른 요소들만 걸러서 새로운 배열 생성
-  //     const nowTodo = todoData.filter((item) => item.id !== id);
-  //     // console.log("클릭", nowTodo);
-  //     setTodoData(nowTodo);
-  //   };
-  //   편집창 내용 갱신 처리
   const editChange = (event) => {
     setEditedTitle(event.target.value);
   };
@@ -55,6 +55,7 @@ const ListItem = React.memo(({ item, todoData, setTodoData, deleteClick }) => {
   };
   //  현재 item.id 에 해당하는 것만 업데이트한다.
   const todoId = item.id;
+
   const updateTitle = () => {
     let str = editedTitle;
     str = str.replace(/^\s+|\s+$/gm, "");
@@ -92,6 +93,40 @@ const ListItem = React.memo(({ item, todoData, setTodoData, deleteClick }) => {
     // 로컬에 저장(DB 저장)
     // localStorage.setItem("todoData", JSON.stringify(tempTodo));
   };
+  // 날짜 출력
+  const showTime = (_timestamp) => {
+    const WEEKDAY = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+    const date = new Date(_timestamp);
+    let hours = date.getHours();
+    let ampm = hours >= 12 ? "pm" : "am";
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    hours = hours < 10 ? "0" + hours : hours;
+
+    // 분 표시
+    let time = date.getFullYear();
+    let minutes = date.getMinutes();
+    minutes = minutes < 10 ? "0" + minutes : minutes;
+    let months = date.getMonth();
+    months = months + 1 < 10 ? "0" + (months + 1) : months + 1;
+    let seconds = date.getSeconds();
+    seconds = seconds < 10 ? "0" + seconds : seconds;
+    time += "/";
+    time += months;
+    time += "/";
+    time += date.getDate();
+    time += "/";
+    time += WEEKDAY[date.getDay()];
+    time += " ";
+    time += hours;
+    time += ":";
+    time += minutes;
+    time += ":";
+    time += seconds;
+    time += " ";
+    time += ampm;
+    return time;
+  };
   if (isEditing) {
     // 편집일때 JSX 리턴
     return (
@@ -100,7 +135,6 @@ const ListItem = React.memo(({ item, todoData, setTodoData, deleteClick }) => {
           <input
             type="text"
             className="w-full px-3 py-2 mr-4 text-gray-500 bg-pink-100 border rounded"
-            value={editedTitle}
             onChange={editChange}
           />
         </div>
@@ -119,11 +153,13 @@ const ListItem = React.memo(({ item, todoData, setTodoData, deleteClick }) => {
     return (
       <div className="flex items-center justify-between w-full px-4 py-1 my-2 text-gray-600 bg-white border rounded">
         <div className="items-center">
+          <span>{showTime(item.id)}</span>
           <input
             type="checkbox"
             defaultChecked={item.completed}
             onChange={() => toggleClick(item.id)}
-          />{" "}
+            value={editedTitle}
+          />
           <span className={item.completed ? "line-through" : "none"}>
             {item.title}
           </span>
