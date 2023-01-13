@@ -1,17 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import SignUpDiv from "../styles/SignUpCss";
 
-// import SignUpDiv from "../styles/signUpCss";
 // firebase 기본 코드를 포함
 import firebase from "../firebase";
 import axios from "axios";
 // user 정보 가져오기
+import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
+import { loginUser, clearUser } from "../reducer/userSlice";
 
 const UserInfo = () => {
   // 사용자 정보 수정을 위해서 정보를 가지고 옮
+  const dispatch = useDispatch();
   const user = useSelector((state) => state.user);
-  // firebase 사용자 인증 정보
+
+  // firebae 사용자 인증 정보
   const fireUser = firebase.auth();
 
   const [email, setEmail] = useState("");
@@ -24,9 +28,6 @@ const UserInfo = () => {
     setPw("");
     setPwCheck("");
   }, []);
-
-  // 연속버튼을 막는 변수
-  const [btFlag, setBtFlag] = useState(false);
 
   const navigate = useNavigate();
 
@@ -64,7 +65,6 @@ const UserInfo = () => {
         console.log(error);
       });
   };
-
   // 닉네임 변경요청
   const nameUpdateFn = (e) => {
     e.preventDefault();
@@ -75,20 +75,51 @@ const UserInfo = () => {
     if (!nameCheck) {
       return alert("닉네임 중복검사를 해주세요.");
     }
-    // firebase에 프로필 업데이트 실행
+    // firebase 에 사용자 프로필 업데이트 실행
     fireUser.currentUser
       .updateProfile({
         displayName: nickName,
       })
       .then(() => {
         alert("닉네임을 변경하였습니다.");
-        setNickName(nickName);
+        let body = {
+          email: email,
+          displayName: nickName,
+          uid: user.uid,
+        };
+        axios
+          .post("/api/user/update", body)
+          .then((response) => {
+            // 서버에 사용자 이메일을 변경한다.
+            // 변경하고 나서 dipatch 보내주는 것으로 수정
+            // 실제 사용자 화면 및 userSlice state 정보 업데이트
+            if (response.data.success) {
+              alert("정보가 업데이트 되었습니다.");
+              const userInfo = {
+                displayName: nickName,
+                uid: user.uid,
+                accessToken: user.accessToken,
+                email: email,
+              };
+              dispatch(loginUser(userInfo));
+              setNickName(nickName);
+            } else {
+              alert("정보 업데이트가 실패하였습니다.");
+            }
+          })
+          .catch((error) => {
+            // alert("서버가 불안정하게 연결하였습니다.");
+            console.log(error);
+          });
       })
       .catch((error) => {
-        // 로그인 실패
         const errorCode = error.code;
         const errorMessage = error.message;
         console.log(errorCode, errorMessage);
+        alert("서버가 불안정하게 연결하였습니다.\n다시 로그인 해주세요.");
+        firebase.auth().signOut();
+        dispatch(clearUser());
+        navigate("/login");
       });
   };
   // 이메일 변경요청
@@ -98,18 +129,50 @@ const UserInfo = () => {
     if (!email) {
       return alert("이메일을 입력하세요.");
     }
+
     // firebase 이메일 변경 요청
     fireUser.currentUser
       .updateEmail(email)
       .then(() => {
-        alert("이메일을 변경하였습니다.");
-        setEmail(email);
+        let body = {
+          email: email,
+          displayName: nickName,
+          uid: user.uid,
+        };
+        axios
+          .post("/api/user/update", body)
+          .then((response) => {
+            // 서버에 사용자 이메일을 변경한다.
+            // 변경하고 나서 dipatch 보내주는 것으로 수정
+            // 실제 사용자 화면 및 userSlice state 정보 업데이트
+            if (response.data.success) {
+              alert("정보가 업데이트 되었습니다.");
+              const userInfo = {
+                displayName: nickName,
+                uid: user.uid,
+                accessToken: user.accessToken,
+                email: email,
+              };
+              dispatch(loginUser(userInfo));
+              setEmail(email);
+            } else {
+              alert("정보 업데이트가 실패하였습니다.");
+            }
+          })
+          .catch((error) => {
+            // alert("서버가 불안정하게 연결하였습니다.");
+            console.log(error);
+          });
       })
       .catch((error) => {
         // 로그인 실패
         const errorCode = error.code;
         const errorMessage = error.message;
         console.log(errorCode, errorMessage);
+        alert("서버가 불안정하게 연결하였습니다.\n다시 로그인 해주세요.");
+        firebase.auth().signOut();
+        dispatch(clearUser());
+        navigate("/login");
       });
   };
   // 비밀번호 변경요청
@@ -125,6 +188,7 @@ const UserInfo = () => {
     if (pw !== pwCheck) {
       return alert("비밀번호는 같아야 합니다.");
     }
+    // firebase 비밀번호 변경 요청
     fireUser.currentUser
       .updatePassword(pw)
       .then(() => {
@@ -137,12 +201,16 @@ const UserInfo = () => {
         const errorCode = error.code;
         const errorMessage = error.message;
         console.log(errorCode, errorMessage);
+        alert("서버가 불안정하게 연결하였습니다.\n다시 로그인 해주세요.");
+        firebase.auth().signOut();
+        dispatch(clearUser());
+        navigate("/login");
       });
   };
   // 회원 탈퇴
   const registOutFunc = (e) => {
     e.preventDefault();
-    // firebase 회원삭제
+    // firebase 회원 삭제
     fireUser.currentUser
       .delete()
       .then(() => {
@@ -157,6 +225,7 @@ const UserInfo = () => {
             if (response.data.success) {
               alert("회원 탈퇴하였습니다.");
               // 회원정보 삭제 성공
+              dispatch(clearUser());
               navigate("/login");
             } else {
               // 회원정보 삭제 실패
@@ -177,77 +246,75 @@ const UserInfo = () => {
   return (
     <div className="p-6 m-4 shadow">
       <h2>User Info</h2>
-      {/* <SignUpDiv> */}
-      <form>
-        <div className="flex justify-start mb-3">
-          <label className="mr-5 text-xl ">닉네임</label>
-          <input
-            type="text"
-            className="mr-5"
-            required
-            maxLength={20}
-            minLength={3}
-            value={nickName}
-            onChange={(e) => setNickName(e.target.value)}
-          />
-          <button className="mr-5" onClick={(e) => nameCheckFn(e)}>
-            닉네임 중복검사
-          </button>
-          <button onClick={(e) => nameUpdateFn(e)}>닉네임 변경</button>
-        </div>
-      </form>
-
-      <form>
-        <div className="flex justify-start mb-3">
-          <label className="mr-5 text-xl">이메일</label>
-          <input
-            type="email"
-            className="mr-5"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <button onClick={(e) => emailUpdateFn(e)}>이메일 변경</button>
-        </div>
-      </form>
-      <form>
-        <div className="mb-3">
-          <div className=" text-xl font-bold mb-3">비밀번호 변경</div>
+      <SignUpDiv>
+        <form>
           <div className="flex justify-start mb-3">
-            <label className="mr-5 text-sm items-center ">비밀번호</label>
+            <label className="mr-5 text-xl ">닉네임</label>
             <input
-              type="password"
+              type="text"
               className="mr-5"
               required
-              maxLength={16}
-              minLength={6}
-              value={pw}
-              onChange={(e) => setPw(e.target.value)}
+              maxLength={20}
+              minLength={3}
+              value={nickName}
+              onChange={(e) => setNickName(e.target.value)}
             />
-            <label className="mr-5 text-sm items-center ">비밀번호 확인</label>
-            <input
-              type="password"
-              className="mr-5"
-              required
-              maxLength={16}
-              minLength={6}
-              value={pwCheck}
-              onChange={(e) => setPwCheck(e.target.value)}
-            />
-
-            <button disabled={btFlag} onClick={(e) => passUpdateFn(e)}>
-              비밀번호 변경
+            <button className="mr-5" onClick={(e) => nameCheckFn(e)}>
+              닉네임 중복검사
             </button>
+            <button onClick={(e) => nameUpdateFn(e)}>닉네임 변경</button>
           </div>
-        </div>
-      </form>
+        </form>
 
-      <div className="flex justify-start">
-        <button disabled={btFlag} onClick={(e) => registOutFunc(e)}>
-          회원탈퇴
-        </button>
-      </div>
-      {/* </SignUpDiv> */}
+        <form>
+          <div className="flex justify-start mb-3">
+            <label className="mr-5 text-xl">이메일</label>
+            <input
+              type="email"
+              className="mr-5"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <button onClick={(e) => emailUpdateFn(e)}>이메일 변경</button>
+          </div>
+        </form>
+        <form>
+          <div className="mb-3">
+            <div className=" text-xl font-bold mb-3">비밀번호 변경</div>
+            <div className="flex justify-start mb-3">
+              <label className="mr-5 text-sm items-center ">비밀번호</label>
+              <input
+                type="password"
+                className="mr-5"
+                required
+                maxLength={16}
+                minLength={6}
+                value={pw}
+                onChange={(e) => setPw(e.target.value)}
+              />
+              <label className="mr-5 text-sm items-center ">
+                비밀번호 확인
+              </label>
+              <input
+                type="password"
+                className="mr-5"
+                required
+                maxLength={16}
+                minLength={6}
+                value={pwCheck}
+                onChange={(e) => setPwCheck(e.target.value)}
+              />
+
+              <button onClick={(e) => passUpdateFn(e)}>비밀번호 변경</button>
+            </div>
+          </div>
+        </form>
+
+        <div className="flex justify-start">
+          <button onClick={(e) => registOutFunc(e)}>회원탈퇴</button>
+        </div>
+      </SignUpDiv>
     </div>
   );
 };

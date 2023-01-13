@@ -1,4 +1,5 @@
 import styled from "@emotion/styled";
+
 const LoginDiv = styled.div`
   width: 100%;
   min-width: 760px;
